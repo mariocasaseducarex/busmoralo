@@ -2,8 +2,9 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bus Urbano de Navalmoral de la Mata</title>
-<link rel="icon" type="image/x-icon" href="img/logoescudo.PNG">
+<link rel="icon" type="image/x-icon" href="img/logoescudo.ico">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -16,6 +17,10 @@ html, body {
 body{
 font-family: Arial;
 margin:0;
+}
+
+:root{
+  --base-font: 16px;
 }
 
 header{
@@ -64,6 +69,11 @@ header .title {
   font-weight: bold;
 }
 
+.line-selector button:focus {
+  outline: 3px solid rgba(0,102,204,0.25);
+  outline-offset: 2px;
+}
+
 header .logo {
   height: 42px;
   width: auto;
@@ -93,6 +103,10 @@ width: 100%;
   overflow-y: auto;
   font-size: 10px;
   display: none;
+}
+
+.info-panel[aria-hidden="false"] {
+  display: block;
 }
 
 .info-panel .schedule-grid {
@@ -155,6 +169,24 @@ font-weight:bold;
   display: none !important;
 }
 
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  :root { --base-font: 18px; }
+  body { font-size: 16px; }
+  header { padding: 10px; }
+  header .title { font-size: 1rem; }
+  header .logo { height: 34px; }
+  .line-selector button { padding: 10px 14px; font-size: 1rem; }
+  #map { top: 72px; }
+  .info-panel { right: 5%; left: 5%; bottom: 12px; width: auto; max-height: 45vh; font-size: 14px; padding: 12px; border-radius: 10px; }
+  .info-panel .schedule-column { padding: 8px; }
+  .info-panel .schedule-time { font-size: 1rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+
 </style>
 
 </head>
@@ -164,9 +196,9 @@ font-weight:bold;
 <header>
   <div class="header-left">
     <h2 class="title">Bus Urbano de Navalmoral de la Mata</h2>
-    <nav class="line-selector">
-      <button id="linea1-btn" class="active" data-line="L1">Línea 1</button>
-      <button id="linea2-btn" data-line="L2">Línea 2</button>
+    <nav class="line-selector" role="navigation" aria-label="Selector de línea">
+      <button id="linea1-btn" class="active" data-line="L1" aria-pressed="true" aria-label="Mostrar Línea 1">Línea 1</button>
+      <button id="linea2-btn" data-line="L2" aria-pressed="false" aria-label="Mostrar Línea 2">Línea 2</button>
     </nav>
   </div>
   <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
@@ -174,8 +206,8 @@ font-weight:bold;
 
 <div id="map"></div>
 
-<div id="info-panel" class="info-panel">
-  <button class="close-btn" onclick="hideInfo()">×</button>
+<div id="info-panel" class="info-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Información de parada">
+  <button class="close-btn" onclick="hideInfo()" aria-label="Cerrar información">×</button>
   <div id="info-content"></div>
 </div>
 
@@ -305,8 +337,11 @@ function getIconForLineas(lineas) {
   return activeLine === 'L1' ? blueIcon : brownIcon;
 }
 
-function createColoredMarker(lat, lon, lineas) {
-  return L.marker([lat, lon], {icon: getIconForLineas(lineas)});
+function createColoredMarker(lat, lon, lineas, title) {
+  var marker = L.marker([lat, lon], {icon: getIconForLineas(lineas), title: title || ''});
+  // add a tooltip for sighted users
+  marker.bindTooltip(title || '', {direction: 'top', offset: [0, -10], permanent: false});
+  return marker;
 }
 
 
@@ -327,7 +362,7 @@ function parada(nombre,lat,lon,linea,horariosCustom=null){
   stopsBounds.extend([lat, lon]);
 
   var lineas = Array.isArray(linea) ? linea : [linea];
-  var marker = createColoredMarker(lat, lon, lineas);
+  var marker = createColoredMarker(lat, lon, lineas, nombre);
   marker.lineas = lineas;
   marker.nombre = nombre;
   marker.horariosCustom = horariosCustom;
@@ -345,11 +380,18 @@ function parada(nombre,lat,lon,linea,horariosCustom=null){
 function showInfo(nombre, lineas, horariosCustom) {
     var content = buildScheduleGrid(nombre, lineas, horariosCustom);
     document.getElementById('info-content').innerHTML = content;
-    document.getElementById('info-panel').style.display = 'block';
+  var panel = document.getElementById('info-panel');
+  panel.setAttribute('aria-hidden', 'false');
+  panel.style.display = 'block';
+  // focus close button for keyboard users
+  var btn = panel.querySelector('.close-btn');
+  if (btn) btn.focus();
 }
 
 function hideInfo() {
-    document.getElementById('info-panel').style.display = 'none';
+  var panel = document.getElementById('info-panel');
+  panel.setAttribute('aria-hidden', 'true');
+  panel.style.display = 'none';
 }
 
 function shouldShowLine(lineas, line) {
@@ -406,8 +448,12 @@ function updateRouteDisplay() {
 
 function setActiveLine(line) {
     activeLine = line;
-    document.getElementById('linea1-btn').classList.toggle('active', line === 'L1');
-    document.getElementById('linea2-btn').classList.toggle('active', line === 'L2');
+  var b1 = document.getElementById('linea1-btn');
+  var b2 = document.getElementById('linea2-btn');
+  b1.classList.toggle('active', line === 'L1');
+  b2.classList.toggle('active', line === 'L2');
+  b1.setAttribute('aria-pressed', line === 'L1' ? 'true' : 'false');
+  b2.setAttribute('aria-pressed', line === 'L2' ? 'true' : 'false');
     hideInfo();
     updateRouteDisplay();
 }
