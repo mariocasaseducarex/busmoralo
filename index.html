@@ -30,31 +30,35 @@ color:rgb(2, 26, 134);
 display: flex;
 align-items: center;
 justify-content: space-between;
-padding: 10px 15px;
+padding: 8px 12px;
 position: relative;
 z-index: 1000;
-gap: 12px;
+gap: 10px;
 }
 
 header .header-left {
   display: flex;
   align-items: center;
-  gap: 16px;
+  justify-content: space-between;
+  gap: 12px;
   min-width: 0;
   flex: 1;
 }
 
-header .title {
-  margin: 0;
-  font-size: 1.2rem;
+header .header-brand-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .header-brand-image {
   display: block;
-  width: min(260px, 44vw);
-  max-width: 260px;
-  height: auto;
-  max-height: 48px;
+  height: 36px;
+  width: auto;
+  max-width: 170px;
   object-fit: contain;
 }
 
@@ -92,10 +96,10 @@ header .title {
 }
 
 header .logo {
-  height: 42px;
+  height: 38px;
   width: auto;
-  margin-left: 12px;
-  max-width: 100%;
+  max-width: 90px;
+  object-fit: contain;
   flex-shrink: 0;
 }
 #map{
@@ -306,16 +310,48 @@ font-weight:bold;
 }
 
 /* Responsive adjustments */
+@media (max-width: 900px) {
+  header {
+    flex-direction: column;
+    align-items: center;
+  }
+  header .header-left {
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+  }
+  header .header-brand-group {
+    width: 100%;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  header .logo {
+    height: 32px;
+    max-width: 80px;
+  }
+  .header-brand-image {
+    height: 32px;
+    max-width: 150px;
+  }
+  .line-selector {
+    justify-content: center;
+    width: 100%;
+  }
+}
+
 @media (max-width: 600px) {
   :root { --base-font: 18px; }
   body { font-size: 16px; }
   header { padding: 10px; }
   header .title { font-size: 1rem; }
-  header .logo { height: 34px; }
+  header .logo {
+    height: 30px;
+    max-width: 76px;
+  }
   .header-brand-image {
-    width: min(220px, 64vw);
-    max-width: 220px;
-    max-height: 40px;
+    height: 30px;
+    max-width: 140px;
   }
   .line-selector button,
   .line-selector .legend-button { padding: 10px 14px; font-size: 1rem; }
@@ -369,14 +405,16 @@ font-weight:bold;
 
 <header>
   <div class="header-left">
-    <img class="header-brand-image" src="img/LogoBus.png" alt="Logo del autobús urbano de Navalmoral de la Mata" />
+    <div class="header-brand-group">
+      <img class="header-brand-image" src="img/LogoBus.png" alt="Logo del autobús urbano de Navalmoral de la Mata" />
+      <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
+    </div>
     <nav class="line-selector" role="navigation" aria-label="Selector de línea">
       <button id="linea1-btn" class="active" data-line="L1" aria-pressed="true" aria-label="Mostrar Línea 1">Línea 1</button>
       <button id="linea2-btn" data-line="L2" aria-pressed="false" aria-label="Mostrar Línea 2">Línea 2</button>
       <button id="legend-btn" class="legend-button" type="button" aria-haspopup="dialog" aria-controls="legend-modal" aria-label="Abrir leyenda">Información</button>
     </nav>
   </div>
-  <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
 </header>
 
 <div id="legend-modal" class="legend-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Leyenda del autobús">
