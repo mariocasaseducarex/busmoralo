@@ -822,6 +822,11 @@ if (expandInfoBtn) {
   });
 }
 
+function getSpeechRate() {
+  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  return isIOS ? 0.68 : 0.75;
+}
+
 if (speakInfoBtn) {
   speakInfoBtn.addEventListener('click', function() {
     if (!('speechSynthesis' in window)) {
@@ -833,7 +838,18 @@ if (speakInfoBtn) {
     window.speechSynthesis.cancel();
     var utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'es-ES';
-    utterance.rate = 0.8;
+    utterance.rate = getSpeechRate();
+    utterance.pitch = 1;
+    utterance.volume = 1;
+
+    var voices = window.speechSynthesis.getVoices();
+    var preferredVoice = voices.find(function(voice) {
+      return /es|es-ES/i.test(voice.lang);
+    });
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+
     window.speechSynthesis.speak(utterance);
   });
 }
