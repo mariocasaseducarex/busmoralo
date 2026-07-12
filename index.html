@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bus Urbano de Navalmoral de la Mata</title>
-<link rel="icon" type="image/x-icon" href="img/logoescudo.ico">
+<link rel="icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
+<link rel="shortcut icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 
@@ -45,6 +46,15 @@ header .title {
   font-size: 1.2rem;
 }
 
+.header-brand-image {
+  display: block;
+  width: min(260px, 44vw);
+  max-width: 260px;
+  height: auto;
+  max-height: 48px;
+  object-fit: contain;
+}
+
 .line-selector {
   display: flex;
   gap: 8px;
@@ -58,7 +68,7 @@ header .title {
   color: rgb(2, 26, 134);
   padding: 6px 10px;
   border-radius: 8px;
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   cursor: pointer;
 }
 
@@ -96,17 +106,25 @@ width: 100%;
   position: absolute;
   bottom: 120px;
   right: 20px;
-  width: 220px;
-  height: auto;
-  max-height: 260px;
-  background: rgba(255,255,255,0.95);
-  padding: 10px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.6);
+  width: min(260px, calc(100vw - 24px));
+  max-width: 320px;
+  max-height: 280px;
+  background: rgba(255,255,255,0.96);
+  padding: 12px 12px 14px;
+  border-radius: 14px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
   z-index: 1001;
   overflow-y: auto;
-  font-size: 10px;
+  font-size: 14px;
   display: none;
+  transition: width 0.2s ease, max-height 0.2s ease, transform 0.2s ease;
+}
+
+.info-panel.is-expanded {
+  width: min(360px, calc(100vw - 24px));
+  max-width: 420px;
+  max-height: min(420px, calc(100vh - 140px));
+  transform: translateY(-4px);
 }
 
 .info-panel[aria-hidden="false"] {
@@ -128,21 +146,48 @@ width: 100%;
 .info-panel .schedule-line {
   font-weight: bold;
   margin-bottom: 4px;
+  font-size: 1.05rem;
 }
 
 .info-panel .schedule-time {
   line-height: 1.2;
+  font-size: 1rem;
+}
+
+.info-panel .panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 8px;
+  padding-right: 24px;
+}
+
+.info-panel .panel-btn {
+  border: none;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: #e7f1ff;
+  color: #0b3d91;
+}
+
+.info-panel .panel-btn:hover,
+.info-panel .panel-btn:focus-visible {
+  background: #cfe2ff;
+  outline: 2px solid rgba(0,102,204,0.25);
+  outline-offset: 2px;
 }
 
 .info-panel .close-btn {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: 8px;
+  right: 8px;
   background: #ccc;
   border: none;
   border-radius: 50%;
-  width: 20px;
-  height: 20px;
+  width: 24px;
+  height: 24px;
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
@@ -230,12 +275,31 @@ font-weight:bold;
   header { padding: 10px; }
   header .title { font-size: 1rem; }
   header .logo { height: 34px; }
+  .header-brand-image {
+    width: min(220px, 64vw);
+    max-width: 220px;
+    max-height: 40px;
+  }
   .line-selector button,
   .line-selector .legend-button { padding: 10px 14px; font-size: 1rem; }
   .legend-modal { padding: 8px; }
   .legend-modal__content img { max-height: calc(100vh - 16px); }
   #map { top: 72px; }
-  .info-panel { right: 5%; left: 5%; bottom: 12px; width: auto; max-height: 45vh; font-size: 14px; padding: 12px; border-radius: 10px; }
+  .info-panel {
+    right: 12px;
+    left: 12px;
+    bottom: 12px;
+    width: auto;
+    max-width: none;
+    max-height: min(48vh, 380px);
+    font-size: 15px;
+    padding: 12px;
+    border-radius: 10px;
+  }
+  .info-panel.is-expanded {
+    width: auto;
+    max-height: min(70vh, 520px);
+  }
   .info-panel .schedule-column { padding: 8px; }
   .info-panel .schedule-time { font-size: 1rem; }
 }
@@ -252,11 +316,11 @@ font-weight:bold;
 
 <header>
   <div class="header-left">
-    <h2 class="title">Bus Urbano de Navalmoral de la Mata</h2>
+    <img class="header-brand-image" src="img/LogoBus.png" alt="Logo del autobús urbano de Navalmoral de la Mata" />
     <nav class="line-selector" role="navigation" aria-label="Selector de línea">
       <button id="linea1-btn" class="active" data-line="L1" aria-pressed="true" aria-label="Mostrar Línea 1">Línea 1</button>
       <button id="linea2-btn" data-line="L2" aria-pressed="false" aria-label="Mostrar Línea 2">Línea 2</button>
-      <button id="legend-btn" class="legend-button" type="button" aria-haspopup="dialog" aria-controls="legend-modal" aria-label="Abrir leyenda">Leyenda</button>
+      <button id="legend-btn" class="legend-button" type="button" aria-haspopup="dialog" aria-controls="legend-modal" aria-label="Abrir leyenda">Información</button>
     </nav>
   </div>
   <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
@@ -272,6 +336,10 @@ font-weight:bold;
 <div id="map"></div>
 
 <div id="info-panel" class="info-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Información de parada">
+  <div class="panel-actions">
+    <button id="expand-info-btn" class="panel-btn" type="button" aria-label="Ampliar información">🔍 Ampliar</button>
+    <button id="speak-info-btn" class="panel-btn" type="button" aria-label="Leer la información en voz alta">🔊 Leer</button>
+  </div>
   <button class="close-btn" onclick="hideInfo()" aria-label="Cerrar información">×</button>
   <div id="info-content"></div>
 </div>
@@ -400,13 +468,9 @@ var rutaL1Waypoints = [
   L.latLng(39.890326, -5.535922), // La Gota
   L.latLng(39.892250, -5.538347), // Los Colorines
   L.latLng(39.89581043396135, -5.538896528668628), // Genaro Cajal / Cartagena 
-  L.latLng(39.8953455011497, -5.542091598500497), // Intermedio 
-  L.latLng(39.895292604169, -5.542459313285198), // Intermedio 
-  L.latLng(39.89521955589046, -5.542718683535119), // Intermedio
-  L.latLng(39.89510368604756, -5.542676002354752), // Intermedio 
-  L.latLng(39.89439334925089, -5.542462596452918), // Intermedio 
-  L.latLng(39.89406840548657, -5.542626754840714), // Avda. Constitución
-  L.latLng(39.89282151396068, -5.544672168318194), // Sta. Teresa de Jesús
+  L.latLng(39.895197, -5.543096), // Final de la Calle Cartagena
+  L.latLng(39.895062, -5.543692),//Inicio Estación de Autobuses, cortada
+  L.latLng(39.892849170899524, -5.5451132366019795), // Paseo de la Estación
   L.latLng(39.89204335743384, -5.545121723808191), // Cruz de los Caídos
   L.latLng(39.892323117180524, -5.550879202777898), // Ambulatorio
   L.latLng(39.888488891031265, -5.561153301912327), // Hospital Campo Arañuelo
@@ -556,7 +620,7 @@ function showInfo(nombre, lineas, horariosCustom) {
   var panel = document.getElementById('info-panel');
   panel.setAttribute('aria-hidden', 'false');
   panel.style.display = 'block';
-  // focus close button for keyboard users
+  panel.classList.remove('is-expanded');
   var btn = panel.querySelector('.close-btn');
   if (btn) btn.focus();
 }
@@ -565,6 +629,7 @@ function hideInfo() {
   var panel = document.getElementById('info-panel');
   panel.setAttribute('aria-hidden', 'true');
   panel.style.display = 'none';
+  panel.classList.remove('is-expanded');
 }
 
 function shouldShowLine(lineas, line) {
@@ -635,8 +700,36 @@ function setActiveLine(line) {
 
 var linea1Btn = document.getElementById('linea1-btn');
 var linea2Btn = document.getElementById('linea2-btn');
+var expandInfoBtn = document.getElementById('expand-info-btn');
+var speakInfoBtn = document.getElementById('speak-info-btn');
+var infoPanel = document.getElementById('info-panel');
+var infoContent = document.getElementById('info-content');
 linea1Btn.addEventListener('click', function() { setActiveLine('L1'); });
 linea2Btn.addEventListener('click', function() { setActiveLine('L2'); });
+
+if (expandInfoBtn) {
+  expandInfoBtn.addEventListener('click', function() {
+    if (infoPanel) {
+      infoPanel.classList.toggle('is-expanded');
+    }
+  });
+}
+
+if (speakInfoBtn) {
+  speakInfoBtn.addEventListener('click', function() {
+    if (!('speechSynthesis' in window)) {
+      alert('Tu navegador no soporta lectura por voz.');
+      return;
+    }
+    var textToSpeak = infoContent ? infoContent.innerText : '';
+    if (!textToSpeak.trim()) return;
+    window.speechSynthesis.cancel();
+    var utterance = new SpeechSynthesisUtterance(textToSpeak);
+    utterance.lang = 'es-ES';
+    utterance.rate = 1;
+    window.speechSynthesis.speak(utterance);
+  });
+}
 
 function buildScheduleGrid(nombre, lineas, horariosCustom) {
     var html = '<b>' + nombre + '</b><br><br>';
@@ -669,7 +762,7 @@ parada("Navarrosa",39.896962797655945, -5.538585727664585,"L1",{L1: ["08:05","09
 parada("Marcha Verde",39.890748, -5.531859,"L1",{L1: ["08:10","09:10","10:10","11:10","12:10","13:10","14:10"]});
 parada("La Gota",39.890326, -5.535922,"L1",{L1: ["08:15","09:15","10:15","11:15","12:15","13:15","14:15"]});
 parada("Los Colorines",39.892250, -5.538347,"L1");
-parada("Estación de Autobuses",39.89511177986508, -5.542729680371485,"L1");
+parada("Estación de Autobuses",39.89479316046357, -5.544554349363017,"L1");
 parada("Cruz de los Caídos",39.892035005367596, -5.545145706808227,"L1");
 parada("Ambularorio",39.892318482521254, -5.550908429949313,"L1");
 parada("Hospital Campo Arañuelo",39.8884254926139, -5.561181591792536,"L1");
