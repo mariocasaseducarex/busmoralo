@@ -33,12 +33,15 @@ justify-content: space-between;
 padding: 10px 15px;
 position: relative;
 z-index: 1000;
+gap: 12px;
 }
 
 header .header-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+  flex: 1;
 }
 
 header .title {
@@ -92,6 +95,8 @@ header .logo {
   height: 42px;
   width: auto;
   margin-left: 12px;
+  max-width: 100%;
+  flex-shrink: 0;
 }
 #map{
 position: absolute;
@@ -137,6 +142,23 @@ width: 100%;
   gap: 8px;
 }
 
+.info-panel .info-content-inner {
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.info-panel .info-content-inner[data-font-scale="2"] {
+  font-size: 1.1rem;
+}
+
+.info-panel .info-content-inner[data-font-scale="3"] {
+  font-size: 1.2rem;
+}
+
+.info-panel .info-content-inner[data-font-scale="4"] {
+  font-size: 1.3rem;
+}
+
 .info-panel .schedule-column {
   background: rgba(0,0,0,0.04);
   padding: 6px;
@@ -152,6 +174,21 @@ width: 100%;
 .info-panel .schedule-time {
   line-height: 1.2;
   font-size: 1rem;
+}
+
+.info-panel .info-content-inner[data-font-scale="2"] .schedule-line,
+.info-panel .info-content-inner[data-font-scale="2"] .schedule-time {
+  font-size: calc(1.05rem + 0.05rem);
+}
+
+.info-panel .info-content-inner[data-font-scale="3"] .schedule-line,
+.info-panel .info-content-inner[data-font-scale="3"] .schedule-time {
+  font-size: calc(1.05rem + 0.1rem);
+}
+
+.info-panel .info-content-inner[data-font-scale="4"] .schedule-line,
+.info-panel .info-content-inner[data-font-scale="4"] .schedule-time {
+  font-size: calc(1.05rem + 0.15rem);
 }
 
 .info-panel .panel-actions {
@@ -296,6 +333,22 @@ font-weight:bold;
     padding: 12px;
     border-radius: 10px;
   }
+  header {
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  header .header-left {
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .header-brand-image {
+    width: min(180px, 56vw);
+    max-width: 180px;
+  }
+  header .logo {
+    height: 34px;
+    margin-left: 0;
+  }
   .info-panel.is-expanded {
     width: auto;
     max-height: min(70vh, 520px);
@@ -341,7 +394,7 @@ font-weight:bold;
     <button id="speak-info-btn" class="panel-btn" type="button" aria-label="Leer la información en voz alta">🔊 Leer</button>
   </div>
   <button class="close-btn" onclick="hideInfo()" aria-label="Cerrar información">×</button>
-  <div id="info-content"></div>
+  <div id="info-content" class="info-content-inner"></div>
 </div>
 
 
@@ -620,7 +673,8 @@ function showInfo(nombre, lineas, horariosCustom) {
   var panel = document.getElementById('info-panel');
   panel.setAttribute('aria-hidden', 'false');
   panel.style.display = 'block';
-  panel.classList.remove('is-expanded');
+  fontScale = 1;
+  applyInfoFontScale();
   var btn = panel.querySelector('.close-btn');
   if (btn) btn.focus();
 }
@@ -629,7 +683,11 @@ function hideInfo() {
   var panel = document.getElementById('info-panel');
   panel.setAttribute('aria-hidden', 'true');
   panel.style.display = 'none';
-  panel.classList.remove('is-expanded');
+  fontScale = 1;
+  applyInfoFontScale();
+  if ('speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
 }
 
 function shouldShowLine(lineas, line) {
@@ -704,13 +762,24 @@ var expandInfoBtn = document.getElementById('expand-info-btn');
 var speakInfoBtn = document.getElementById('speak-info-btn');
 var infoPanel = document.getElementById('info-panel');
 var infoContent = document.getElementById('info-content');
+var fontScale = 1;
 linea1Btn.addEventListener('click', function() { setActiveLine('L1'); });
 linea2Btn.addEventListener('click', function() { setActiveLine('L2'); });
 
+function applyInfoFontScale() {
+  if (infoContent) {
+    infoContent.setAttribute('data-font-scale', fontScale);
+  }
+}
+
 if (expandInfoBtn) {
   expandInfoBtn.addEventListener('click', function() {
-    if (infoPanel) {
-      infoPanel.classList.toggle('is-expanded');
+    if (fontScale < 4) {
+      fontScale += 1;
+      applyInfoFontScale();
+    } else {
+      fontScale = 1;
+      applyInfoFontScale();
     }
   });
 }
