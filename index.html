@@ -833,7 +833,7 @@ if (speakInfoBtn) {
     window.speechSynthesis.cancel();
     var utterance = new SpeechSynthesisUtterance(textToSpeak);
     utterance.lang = 'es-ES';
-    utterance.rate = 1;
+    utterance.rate = 0.8;
     window.speechSynthesis.speak(utterance);
   });
 }
