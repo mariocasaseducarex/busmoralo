@@ -1,912 +1,672 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Bus Urbano de Navalmoral de la Mata</title>
-<link rel="icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
-<link rel="shortcut icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bus Urbano de Navalmoral de la Mata</title>
+  <link rel="icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
+  <link rel="shortcut icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-<style>
-
-html, body {
-  height: 100%;
-}
-
-body{
-font-family: Arial;
-margin:0;
-}
-
-:root{
-  --base-font: 16px;
-}
-
-header{
-background:#d0e0f0;
-color:rgb(2, 26, 134);
-display: flex;
-align-items: center;
-justify-content: space-between;
-padding: 8px 12px;
-position: relative;
-z-index: 1000;
-gap: 10px;
-}
-
-header .header-left {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  min-width: 0;
-  flex: 1;
-}
-
-header .header-brand-group {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  max-width: 100%;
-}
-
-.header-brand-image {
-  display: block;
-  height: 36px;
-  width: auto;
-  max-width: 170px;
-  object-fit: contain;
-}
-
-.line-selector {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.line-selector button,
-.line-selector .legend-button {
-  border: none;
-  background: transparent;
-  color: rgb(2, 26, 134);
-  padding: 6px 10px;
-  border-radius: 8px;
-  font-size: 1.05rem;
-  cursor: pointer;
-}
-
-.line-selector button:hover,
-.line-selector .legend-button:hover {
-  background: rgba(0,0,0,0.07);
-}
-
-.line-selector button.active {
-  background: rgba(0,0,0,0.14);
-  font-weight: bold;
-}
-
-.line-selector button:focus,
-.line-selector .legend-button:focus {
-  outline: 3px solid rgba(0,102,204,0.25);
-  outline-offset: 2px;
-}
-
-header .logo {
-  height: 38px;
-  width: auto;
-  max-width: 90px;
-  object-fit: contain;
-  flex-shrink: 0;
-}
-#map{
-position: absolute;
-top: 60px;
-bottom: 0;
-left: 0;
-right: 0;
-width: 100%;
-}
-
-.info-panel {
-  position: absolute;
-  bottom: 120px;
-  right: 20px;
-  width: min(260px, calc(100vw - 24px));
-  max-width: 320px;
-  max-height: 280px;
-  background: rgba(255,255,255,0.96);
-  padding: 12px 12px 14px;
-  border-radius: 14px;
-  box-shadow: 0 6px 24px rgba(0,0,0,0.55);
-  z-index: 1001;
-  overflow-y: auto;
-  font-size: 14px;
-  display: none;
-  transition: width 0.2s ease, max-height 0.2s ease, transform 0.2s ease;
-}
-
-.info-panel.is-expanded {
-  width: min(360px, calc(100vw - 24px));
-  max-width: 420px;
-  max-height: min(420px, calc(100vh - 140px));
-  transform: translateY(-4px);
-}
-
-.info-panel[aria-hidden="false"] {
-  display: block;
-}
-
-.info-panel .schedule-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-  gap: 8px;
-}
-
-.info-panel .info-content-inner {
-  font-size: 1rem;
-  line-height: 1.4;
-}
-
-.info-panel .info-content-inner[data-font-scale="2"] {
-  font-size: 1.1rem;
-}
-
-.info-panel .info-content-inner[data-font-scale="3"] {
-  font-size: 1.2rem;
-}
-
-.info-panel .info-content-inner[data-font-scale="4"] {
-  font-size: 1.3rem;
-}
-
-.info-panel .schedule-column {
-  background: rgba(0,0,0,0.04);
-  padding: 6px;
-  border-radius: 6px;
-}
-
-.info-panel .schedule-line {
-  font-weight: bold;
-  margin-bottom: 4px;
-  font-size: 1.05rem;
-}
-
-.info-panel .schedule-time {
-  line-height: 1.2;
-  font-size: 1rem;
-}
-
-.info-panel .info-content-inner[data-font-scale="2"] .schedule-line,
-.info-panel .info-content-inner[data-font-scale="2"] .schedule-time {
-  font-size: calc(1.05rem + 0.05rem);
-}
-
-.info-panel .info-content-inner[data-font-scale="3"] .schedule-line,
-.info-panel .info-content-inner[data-font-scale="3"] .schedule-time {
-  font-size: calc(1.05rem + 0.1rem);
-}
-
-.info-panel .info-content-inner[data-font-scale="4"] .schedule-line,
-.info-panel .info-content-inner[data-font-scale="4"] .schedule-time {
-  font-size: calc(1.05rem + 0.15rem);
-}
-
-.info-panel .panel-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  margin-bottom: 8px;
-  padding-right: 24px;
-}
-
-.info-panel .panel-btn {
-  border: none;
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 0.9rem;
-  cursor: pointer;
-  background: #e7f1ff;
-  color: #0b3d91;
-}
-
-.info-panel .panel-btn:hover,
-.info-panel .panel-btn:focus-visible {
-  background: #cfe2ff;
-  outline: 2px solid rgba(0,102,204,0.25);
-  outline-offset: 2px;
-}
-
-.info-panel .close-btn {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: #ccc;
-  border: none;
-  border-radius: 50%;
-  width: 24px;
-  height: 24px;
-  cursor: pointer;
-  font-size: 14px;
-  line-height: 1;
-}
-
-.info{
-padding:10px;
-background:#f4f4f4;
-}
-
-.linea1{
-color:#0066cc;
-font-weight:bold;
-}
-
-.linea2{
-color:#8B4513;
-font-weight:bold;
-}
-
-.custom-marker {
-    background: transparent;
-    border: none;
-}
-
-.legend-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.9);
-  display: none;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
-  z-index: 1100;
-}
-
-.legend-modal.is-open {
-  display: flex;
-}
-
-.legend-modal__content {
-  position: relative;
-  width: min(95vw, 1200px);
-  max-height: 95vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.legend-modal__content img {
-  display: block;
-  max-width: 100%;
-  max-height: 95vh;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-}
-
-.legend-modal__close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  border: none;
-  background: rgba(255,255,255,0.9);
-  color: #222;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  font-size: 1.2rem;
-  cursor: pointer;
-  z-index: 1;
-}
-
-/* Hide Leaflet routing-machine empty control box */
-.leaflet-routing-container {
-  display: none !important;
-}
-
-/* Responsive adjustments */
-@media (max-width: 900px) {
-  header {
-    flex-direction: column;
-    align-items: center;
-  }
-  header .header-left {
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-  }
-  header .header-brand-group {
-    width: 100%;
-    justify-content: center;
-    margin-bottom: 4px;
-  }
-  header .logo {
-    height: 32px;
-    max-width: 80px;
-  }
-  .header-brand-image {
-    height: 32px;
-    max-width: 150px;
-  }
-  .line-selector {
-    justify-content: center;
-    width: 100%;
-  }
-}
-
-@media (max-width: 600px) {
-  :root { --base-font: 18px; }
-  body { font-size: 16px; }
-  header { padding: 10px; }
-  header .title { font-size: 1rem; }
-  header .logo {
-    height: 30px;
-    max-width: 76px;
-  }
-  .header-brand-image {
-    height: 30px;
-    max-width: 140px;
-  }
-  .line-selector button,
-  .line-selector .legend-button { padding: 10px 14px; font-size: 1rem; }
-  .legend-modal { padding: 8px; }
-  .legend-modal__content img { max-height: calc(100vh - 16px); }
-  #map { top: 72px; }
-  .info-panel {
-    right: 12px;
-    left: 12px;
-    bottom: 12px;
-    width: auto;
-    max-width: none;
-    max-height: min(48vh, 380px);
-    font-size: 15px;
-    padding: 12px;
-    border-radius: 10px;
-  }
-  header {
-    flex-wrap: wrap;
-    align-items: center;
-  }
-  header .header-left {
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .header-brand-image {
-    width: min(180px, 56vw);
-    max-width: 180px;
-  }
-  header .logo {
-    height: 34px;
-    margin-left: 0;
-  }
-  .info-panel.is-expanded {
-    width: auto;
-    max-height: min(70vh, 520px);
-  }
-  .info-panel .schedule-column { padding: 8px; }
-  .info-panel .schedule-time { font-size: 1rem; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
-}
-
-</style>
-
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="css/styles.css" />
 </head>
 
 <body>
 
-<header>
-  <div class="header-left">
-    <div class="header-brand-group">
-      <img class="header-brand-image" src="img/LogoBus.png" alt="Logo del autobús urbano de Navalmoral de la Mata" />
-      <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
+  <header>
+    <div class="header-left">
+      <div class="header-brand-group">
+        <img class="header-brand-image" src="img/LogoBus.png" alt="Logo del autobús urbano de Navalmoral de la Mata" />
+        <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
+      </div>
+      <nav class="line-selector" role="navigation" aria-label="Selector de línea">
+        <button id="linea1-btn" class="active" data-line="L1" aria-pressed="true" aria-label="Mostrar Línea 1">Línea
+          1</button>
+        <button id="linea2-btn" data-line="L2" aria-pressed="false" aria-label="Mostrar Línea 2">Línea 2</button>
+        <button id="legend-btn" class="legend-button" type="button" aria-haspopup="dialog" aria-controls="legend-modal"
+          aria-label="Abrir leyenda">Información</button>
+      </nav>
+      <a id="back-link" class="back-btn" href="https://www.aytonavalmoral.es/" aria-label="Volver al Ayuntamiento" title="Volver al Ayuntamiento">
+        <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M15 18L9 12L15 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Volver
+      </a>
     </div>
-    <nav class="line-selector" role="navigation" aria-label="Selector de línea">
-      <button id="linea1-btn" class="active" data-line="L1" aria-pressed="true" aria-label="Mostrar Línea 1">Línea 1</button>
-      <button id="linea2-btn" data-line="L2" aria-pressed="false" aria-label="Mostrar Línea 2">Línea 2</button>
-      <button id="legend-btn" class="legend-button" type="button" aria-haspopup="dialog" aria-controls="legend-modal" aria-label="Abrir leyenda">Información</button>
-    </nav>
+  </header>
+
+  <div id="legend-modal" class="legend-modal" role="dialog" aria-modal="true" aria-hidden="true"
+    aria-label="Leyenda del autobús">
+    <div class="legend-modal__content">
+      <button id="legend-close" class="legend-modal__close" type="button" aria-label="Cerrar leyenda">×</button>
+      <img src="img/AutobusMoralo.jpg" alt="Leyenda del autobús urbano" />
+    </div>
   </div>
-</header>
 
-<div id="legend-modal" class="legend-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Leyenda del autobús">
-  <div class="legend-modal__content">
-    <button id="legend-close" class="legend-modal__close" type="button" aria-label="Cerrar leyenda">×</button>
-    <img src="img/AutobusMoralo.jpg" alt="Leyenda del autobús urbano" />
+  <div id="image-viewer-modal" class="image-viewer-modal" role="dialog" aria-modal="true" aria-hidden="true"
+    aria-label="Visualizador de imagen">
+    <div class="image-viewer-content">
+      <button id="image-viewer-close" class="image-viewer-close" type="button" aria-label="Cerrar imagen">×</button>
+      <img id="image-viewer-img" src="" alt="" />
+    </div>
   </div>
-</div>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<div id="info-panel" class="info-panel" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Información de parada">
-  <div class="panel-actions">
-    <button id="expand-info-btn" class="panel-btn" type="button" aria-label="Ampliar información">🔍 Ampliar</button>
-    <button id="speak-info-btn" class="panel-btn" type="button" aria-label="Leer la información en voz alta">🔊 Leer</button>
+  <div id="info-panel" class="info-panel" role="dialog" aria-modal="true" aria-hidden="true"
+    aria-label="Información de parada">
+    <div class="panel-actions">
+      <button id="expand-info-btn" class="panel-btn" type="button" aria-label="Ampliar información">🔍 Ampliar</button>
+      <button id="speak-info-btn" class="panel-btn" type="button" aria-label="Leer la información en voz alta">🔊
+        Leer</button>
+    </div>
+    <button class="close-btn" onclick="hideInfo()" aria-label="Cerrar información">×</button>
+    <div id="info-content" class="info-content-inner"></div>
   </div>
-  <button class="close-btn" onclick="hideInfo()" aria-label="Cerrar información">×</button>
-  <div id="info-content" class="info-content-inner"></div>
-</div>
 
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
-<script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
-<script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.css" />
+  <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.min.js"></script>
+  <script src="https://unpkg.com/leaflet-polylinedecorator@1.6.0/dist/leaflet.polylineDecorator.js"></script>
 
-<script>
+  <script>
 
-var legendModal = document.getElementById('legend-modal');
-var legendBtn = document.getElementById('legend-btn');
-var legendCloseBtn = document.getElementById('legend-close');
+    var legendModal = document.getElementById('legend-modal');
+    var legendBtn = document.getElementById('legend-btn');
+    var legendCloseBtn = document.getElementById('legend-close');
 
-function openLegend() {
-  if (!legendModal) return;
-  legendModal.classList.add('is-open');
-  legendModal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-}
-
-function closeLegend() {
-  if (!legendModal) return;
-  legendModal.classList.remove('is-open');
-  legendModal.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-}
-
-if (legendBtn) {
-  legendBtn.addEventListener('click', openLegend);
-}
-
-if (legendCloseBtn) {
-  legendCloseBtn.addEventListener('click', closeLegend);
-}
-
-if (legendModal) {
-  legendModal.addEventListener('click', function(event) {
-    if (event.target === legendModal) {
-      closeLegend();
+    function openLegend() {
+      if (!legendModal) return;
+      legendModal.classList.add('is-open');
+      legendModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
     }
-  });
-}
 
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'Escape') {
-    closeLegend();
-  }
-});
-
-//añadido por mí-----------------------
-var stopsBounds = L.latLngBounds([]);
-var directionArrowLayers = [];
-
-function clearDirectionArrows() {
-  directionArrowLayers.forEach(function(layer) {
-    if (layer && map.hasLayer(layer)) {
-      map.removeLayer(layer);
+    function closeLegend() {
+      if (!legendModal) return;
+      legendModal.classList.remove('is-open');
+      legendModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
     }
-  });
-  directionArrowLayers = [];
-}
 
-function addDirectionArrowsToRoute(route, color) {
-  if (!route || !route.coordinates || route.coordinates.length < 2) {
-    return;
-  }
+    if (legendBtn) {
+      legendBtn.addEventListener('click', openLegend);
+    }
 
-  var latlngs = route.coordinates.map(function(coord) {
-    return [coord.lat, coord.lng];
-  });
+    if (legendCloseBtn) {
+      legendCloseBtn.addEventListener('click', closeLegend);
+    }
 
-  var polyline = L.polyline(latlngs, {
-    color: color,
-    weight: 0,
-    opacity: 0
-  });
-
-  var decorator = L.polylineDecorator(polyline, {
-    patterns: [{
-      offset: '100%',
-      repeat: 90,
-      symbol: L.Symbol.arrowHead({
-        pixelSize: 8,
-        polygon: false,
-        pathOptions: {
-          stroke: true,
-          color: color,
-          fillOpacity: 0.85,
-          weight: 2
+    if (legendModal) {
+      legendModal.addEventListener('click', function (event) {
+        if (event.target === legendModal) {
+          closeLegend();
         }
-      })
-    }]
-  });
-
-  decorator.addTo(map);
-  directionArrowLayers.push(decorator);
-}
-
-//---------------------------------------
-
-var navalmoralBounds = L.latLngBounds([
-    [39.865, -5.605],
-    [39.925, -5.475]
-]);
-
-var map = L.map('map', {
-    center: [39.8916, -5.5403],
-    zoom: 13,
-    minZoom: 13,
-    maxZoom: 18,
-    zoomControl: true
-});
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-attribution:'© OpenStreetMap'
-}).addTo(map);
-
-// Ruta L1 siguiendo las calles (OSRM)
-var rutaL1Waypoints = [
-  L.latLng(39.89593665304968, -5.545329987670535), // Silo
-   L.latLng(39.89696422040098, -5.538571561339239), // Navarrosa
-  L.latLng(39.89117875751934, -5.53054470402191), // Marcha Verde
-  L.latLng(39.890326, -5.535922), // La Gota
-  L.latLng(39.892250, -5.538347), // Los Colorines
-  L.latLng(39.89581043396135, -5.538896528668628), // Genaro Cajal / Cartagena 
-  L.latLng(39.895197, -5.543096), // Final de la Calle Cartagena
-  L.latLng(39.895062, -5.543692),//Inicio Estación de Autobuses, cortada
-  L.latLng(39.892849170899524, -5.5451132366019795), // Paseo de la Estación
-  L.latLng(39.89204335743384, -5.545121723808191), // Cruz de los Caídos
-  L.latLng(39.892323117180524, -5.550879202777898), // Ambulatorio
-  L.latLng(39.888488891031265, -5.561153301912327), // Hospital Campo Arañuelo
-  L.latLng(39.892219543022726, -5.550901152427424), // Ambulatorio (Vuelta)
-  L.latLng(39.89015116167454, -5.545782507838506), // Ronda Sur
-  L.latLng(39.88873892662456, -5.541159335330454), // Ronda Sur / Ctra. Valdehúncar
-  L.latLng(39.89022679608061, -5.535731362484204), // La Gota (vuelta)
-  L.latLng(39.89067582505434, -5.5317100369435845),  // Marcha Verde (vuelta)
-  L.latLng(39.89714310027718, -5.538845697135179), // Navarrosa (vuelta)
-  L.latLng(39.89624361588451, -5.54551198946366), // Rotonda Silo (vuelta)
-  L.latLng(39.89593665304968, -5.545329987670535) // Silo (vuelta)
-];
-
-var routingControl = L.Routing.control({
-  waypoints: rutaL1Waypoints,
-  router: L.Routing.osrmv1({serviceUrl: 'https://router.project-osrm.org/route/v1'}),
-  lineOptions: {styles: [{color: '#0066cc', opacity: 0.7, weight: 4}]},
-  addWaypoints: false,
-  draggableWaypoints: false,
-  fitSelectedRoute: false,
-  show: false,
-  routeWhileDragging: false,
-  createMarker: function() { return null; }
-});
-
-routingControl.on('routesfound', function(e) {
-    clearDirectionArrows();
-    if (e.routes && e.routes.length) {
-      addDirectionArrowsToRoute(e.routes[0], '#0066cc');
+      });
     }
-    fitBoundsToActiveMarkers();
-});
 
-// Ruta L2 siguiendo las calles (OSRM)
-var rutaL2Waypoints = [
-  L.latLng(39.892035005367596, -5.545145706808227), // Cruz de los Caídos
-  L.latLng(39.89207084110331, -5.548122445662967), // Punto intermedio
-  L.latLng(39.89015116167454, -5.545782507838506), // Ronda Sur
-  L.latLng(39.88873892662456, -5.541159335330454), // Ronda Sur / Ctra. Valdehúncar
-  L.latLng(39.89022679608061, -5.535731362484204), // La Gota (vuelta)
-  L.latLng(39.89067582505434, -5.5317100369435845),  // Marcha Verde (vuelta)
-  L.latLng(39.89714310027718, -5.538845697135179), // Navarrosa (vuelta)
-  L.latLng(39.89774207768, -5.544290645204779), // Campo de Fútbol
-  L.latLng(39.91270936623701, -5.559816319323396), // Ciudad Deportiva
-  L.latLng(39.89622395893707, -5.544903568259242), // Silo
-  L.latLng(39.89557079448523, -5.549406406818009), // Punto intermedio
-  L.latLng(39.89494824131144, -5.5542351524473474), // Punto intermedio
-  L.latLng(39.89207523829097, -5.547344545709519), // Punto intermedio
-  L.latLng(39.892035005367596, -5.545145706808227) // Cruz de los Caídos (vuelta)
-];
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeLegend();
+      }
+    });
 
-var routingControlL2 = L.Routing.control({
-  waypoints: rutaL2Waypoints,
-  router: L.Routing.osrmv1({serviceUrl: 'https://router.project-osrm.org/route/v1'}),
-  lineOptions: {styles: [{color: '#8B4513', opacity: 0.7, weight: 4}]},
-  addWaypoints: false,
-  draggableWaypoints: false,
-  fitSelectedRoute: false,
-  show: false,
-  routeWhileDragging: false,
-  createMarker: function() { return null; }
-});
+    var imageViewerModal = document.getElementById('image-viewer-modal');
+    var imageViewerCloseBtn = document.getElementById('image-viewer-close');
+    var imageViewerImg = document.getElementById('image-viewer-img');
+    var logoBusImg = document.querySelector('.header-brand-image');
+    var escudoImg = document.querySelector('.logo');
 
-routingControlL2.on('routesfound', function(e) {
-    clearDirectionArrows();
-    if (e.routes && e.routes.length) {
-      addDirectionArrowsToRoute(e.routes[0], '#8B4513');
+    function openImageViewer(src, alt) {
+      if (!imageViewerModal || !imageViewerImg) return;
+      imageViewerImg.src = src;
+      imageViewerImg.alt = alt;
+      imageViewerModal.classList.add('is-open');
+      imageViewerModal.setAttribute('aria-hidden', 'false');
+      document.body.style.overflow = 'hidden';
+      if (imageViewerCloseBtn) imageViewerCloseBtn.focus();
     }
-    fitBoundsToActiveMarkers();
-});
 
-var activeLine = 'L1';
-var allMarkers = [];
+    function closeImageViewer() {
+      if (!imageViewerModal) return;
+      imageViewerModal.classList.remove('is-open');
+      imageViewerModal.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      if (imageViewerImg) imageViewerImg.src = '';
+    }
 
-var lineColors = {
-  L1: '#0066cc',
-  L2: '#8B4513',
-  both: '#666666'
-};
+    if (logoBusImg) {
+      logoBusImg.addEventListener('click', function () {
+        openImageViewer(this.src, this.alt);
+      });
+    }
 
-function createSvgIcon(color) {
-  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">'
-          + '<path d="M12.5 0C5.6 0 0 5.6 0 12.5 0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="' + color + '" stroke="#333" stroke-width="1"/>'
-          + '<circle cx="12.5" cy="12.5" r="6" fill="white" fill-opacity="0.8"/>'
-          + '</svg>';
-  var iconUrl = 'data:image/svg+xml;base64,' + btoa(svg);
-  return L.icon({
-    iconUrl: iconUrl,
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-    popupAnchor: [1, -34],
-    shadowSize: [41, 41]
-  });
-}
+    if (escudoImg) {
+      escudoImg.addEventListener('click', function () {
+        openImageViewer(this.src, this.alt);
+      });
+    }
 
-var blueIcon = createSvgIcon('#0066cc');
-var brownIcon = createSvgIcon('#8B4513');
+    if (imageViewerCloseBtn) {
+      imageViewerCloseBtn.addEventListener('click', closeImageViewer);
+    }
 
-function getIconForLineas(lineas) {
-  return activeLine === 'L1' ? blueIcon : brownIcon;
-}
+    if (imageViewerModal) {
+      imageViewerModal.addEventListener('click', function (event) {
+        if (event.target === imageViewerModal) {
+          closeImageViewer();
+        }
+      });
+    }
 
-function createColoredMarker(lat, lon, lineas, title) {
-  var marker = L.marker([lat, lon], {icon: getIconForLineas(lineas), title: title || ''});
-  // add a tooltip for sighted users
-  marker.bindTooltip(title || '', {direction: 'top', offset: [0, -10], permanent: false});
-  return marker;
-}
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        closeImageViewer();
+      }
+    });
 
+    //añadido por mí-----------------------
+    var stopsBounds = L.latLngBounds([]);
+    var directionArrowLayers = [];
 
-/* HORARIOS */
+    function clearDirectionArrows() {
+      directionArrowLayers.forEach(function (layer) {
+        if (layer && map.hasLayer(layer)) {
+          map.removeLayer(layer);
+        }
+      });
+      directionArrowLayers = [];
+    }
 
-var horariosL1=[
-"08:00","09:00","10:00","11:00","12:00","13:00","14:00"
-];
+    function routeToLatLngs(route) {
+      var latlngs = [];
+      if (!route) return latlngs;
+      if (route.coordinates && route.coordinates.length) {
+        latlngs = route.coordinates.map(function (c) {
+          if (Array.isArray(c) && c.length >= 2) return [c[1], c[0]]; // [lat,lng]
+          if (c && c.lat !== undefined && c.lng !== undefined) return [c.lat, c.lng];
+          return null;
+        }).filter(Boolean);
+      }
+      return latlngs;
+    }
 
-var horariosL2=[
-"15:30","16:30","17:30","18:30","19:30"
-];
+    function haversineDistance(a, b) {
+      var R = 6371000; var toRad = function (x) { return x * Math.PI / 180 };
+      var dLat = toRad(b[0] - a[0]); var dLon = toRad(b[1] - a[1]);
+      var lat1 = toRad(a[0]), lat2 = toRad(b[0]);
+      var aa = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      var c = 2 * Math.atan2(Math.sqrt(aa), Math.sqrt(1 - aa));
+      return R * c;
+    }
 
+    function findClosestIndex(latlngs, target) {
+      var best = 0; var bestD = Infinity;
+      for (var i = 0; i < latlngs.length; i++) {
+        var d = haversineDistance(latlngs[i], [target.lat, target.lng]);
+        if (d < bestD) { bestD = d; best = i; }
+      }
+      return best;
+    }
 
-/* FUNCIÓN PARA CREAR PARADAS */
+    function drawSplitRoute(route, colorBefore, colorAfter, midpointLatLng) {
+      clearDirectionArrows();
+      var latlngs = routeToLatLngs(route);
+      if (!latlngs || latlngs.length < 2) return;
+      var idx = findClosestIndex(latlngs, midpointLatLng);
+      if (idx <= 0 || idx >= latlngs.length - 1) {
+        // dibujar toda la ruta con colorBefore
+        var poly = L.polyline(latlngs, { color: colorBefore, weight: 4, opacity: 0.9 }).addTo(map);
+        var dec = L.polylineDecorator(poly, { patterns: [{ offset: '5%', repeat: 100, symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: true, pathOptions: { color: colorBefore, fillOpacity: 1 } }) }] });
+        dec.addTo(map);
+        directionArrowLayers.push(dec); directionArrowLayers.push(poly);
+        return;
+      }
 
-function parada(nombre,lat,lon,linea,horariosCustom=null){
-  stopsBounds.extend([lat, lon]);
+      var seg1 = latlngs.slice(0, idx + 1);
+      var seg2 = latlngs.slice(idx);
 
-  var lineas = Array.isArray(linea) ? linea : [linea];
-  var marker = createColoredMarker(lat, lon, lineas, nombre);
-  marker.lineas = lineas;
-  marker.nombre = nombre;
-  marker.horariosCustom = horariosCustom;
+      var poly1 = L.polyline(seg1, { color: colorBefore, weight: 4, opacity: 0.9 }).addTo(map);
+      var poly2 = L.polyline(seg2, { color: colorAfter, weight: 4, opacity: 0.95 }).addTo(map);
 
-  marker.on('click', function() {
-      showInfo(nombre, lineas, horariosCustom);
-  });
+      var dec1 = L.polylineDecorator(poly1, { patterns: [{ offset: '5%', repeat: 100, symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: true, pathOptions: { color: colorBefore, fillOpacity: 1 } }) }] });
+      var dec2 = L.polylineDecorator(poly2, { patterns: [{ offset: '5%', repeat: 100, symbol: L.Symbol.arrowHead({ pixelSize: 9, polygon: true, pathOptions: { color: colorAfter, fillOpacity: 1 } }) }] });
 
-  allMarkers.push(marker);
-  if (lineas.includes(activeLine)) {
-    marker.addTo(map);
-  }
-}
+      dec1.addTo(map); dec2.addTo(map);
+      directionArrowLayers.push(dec1); directionArrowLayers.push(dec2);
+      directionArrowLayers.push(poly1); directionArrowLayers.push(poly2);
+    }
 
-function showInfo(nombre, lineas, horariosCustom) {
-    var content = buildScheduleGrid(nombre, lineas, horariosCustom);
-    document.getElementById('info-content').innerHTML = content;
-  var panel = document.getElementById('info-panel');
-  panel.setAttribute('aria-hidden', 'false');
-  panel.style.display = 'block';
-  fontScale = 1;
-  applyInfoFontScale();
-  var btn = panel.querySelector('.close-btn');
-  if (btn) btn.focus();
-}
+    function addDirectionArrowsToRoute(route, color) {
+      if (!route) return;
 
-function hideInfo() {
-  var panel = document.getElementById('info-panel');
-  panel.setAttribute('aria-hidden', 'true');
-  panel.style.display = 'none';
-  fontScale = 1;
-  applyInfoFontScale();
-  if ('speechSynthesis' in window) {
-    window.speechSynthesis.cancel();
-  }
-}
+      // Normalizar coordenadas: aceptamos ambos formatos (array [lng,lat] o objeto {lat,lng}).
+      var latlngs = [];
+      if (route.coordinates && route.coordinates.length) {
+        latlngs = route.coordinates.map(function (coord) {
+          if (Array.isArray(coord) && coord.length >= 2) {
+            // OSRM devuelve [lng, lat]
+            return [coord[1], coord[0]];
+          } else if (coord && coord.lat !== undefined && coord.lng !== undefined) {
+            return [coord.lat, coord.lng];
+          } else if (coord && coord.latitude !== undefined && coord.longitude !== undefined) {
+            return [coord.latitude, coord.longitude];
+          }
+          return null;
+        }).filter(Boolean);
+      }
 
-function shouldShowLine(lineas, line) {
-    return lineas.includes(line);
-}
+      if (!latlngs || latlngs.length < 2) return;
 
-function updateMarkerVisibility() {
-    allMarkers.forEach(function(marker) {
-        if (shouldShowLine(marker.lineas, activeLine)) {
-            if (!map.hasLayer(marker)) {
-                marker.addTo(map);
+      // Creamos una polyline invisible que siga la geometría devuelta por la ruta
+      var polyline = L.polyline(latlngs, { color: color, weight: 0, opacity: 0 }).addTo(map);
+
+      // Decorador con flechas orientadas según la dirección del polyline.
+      var decorator = L.polylineDecorator(polyline, {
+        patterns: [{
+          offset: '5%',        // empezar ligeramente desde el inicio
+          repeat: 120,        // separación entre flechas en píxeles
+          symbol: L.Symbol.arrowHead({
+            pixelSize: 12,
+            polygon: true,
+            pathOptions: {
+              color: color,
+              fillOpacity: 1,
+              weight: 1,
+              opacity: 1
             }
-        } else {
-            if (map.hasLayer(marker)) {
-                map.removeLayer(marker);
-            }
-        }
-    });
-}
+          })
+        }]
+      });
 
-function fitBoundsToActiveMarkers() {
-    var bounds = L.latLngBounds([]);
-    allMarkers.forEach(function(marker) {
-        if (shouldShowLine(marker.lineas, activeLine)) {
-            bounds.extend(marker.getLatLng());
-        }
-    });
-    if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [80,80] });
-    }
-}
-
-var currentRouteControl = null;
-
-function updateMarkerIcons() {
-    allMarkers.forEach(function(marker) {
-        marker.setIcon(getIconForLineas(marker.lineas));
-    });
-}
-
-function updateRouteDisplay() {
-    if (currentRouteControl) {
-        map.removeControl(currentRouteControl);
-        currentRouteControl = null;
+      decorator.addTo(map);
+      // Guardamos ambos para poder limpiarlos después
+      directionArrowLayers.push(decorator);
+      directionArrowLayers.push(polyline);
     }
 
-    clearDirectionArrows();
-    currentRouteControl = (activeLine === 'L1') ? routingControl : routingControlL2;
-    currentRouteControl.addTo(map);
-    currentRouteControl.route();
+    //---------------------------------------
 
-    updateMarkerVisibility();
-    updateMarkerIcons();
-    fitBoundsToActiveMarkers();
-}
+    var navalmoralBounds = L.latLngBounds([
+      [39.865, -5.605],
+      [39.925, -5.475]
+    ]);
 
-function setActiveLine(line) {
-    activeLine = line;
-  var b1 = document.getElementById('linea1-btn');
-  var b2 = document.getElementById('linea2-btn');
-  b1.classList.toggle('active', line === 'L1');
-  b2.classList.toggle('active', line === 'L2');
-  b1.setAttribute('aria-pressed', line === 'L1' ? 'true' : 'false');
-  b2.setAttribute('aria-pressed', line === 'L2' ? 'true' : 'false');
-    hideInfo();
-    updateRouteDisplay();
-}
+    var map = L.map('map', {
+      center: [39.8916, -5.5403],
+      zoom: 13,
+      minZoom: 13,
+      maxZoom: 18,
+      zoomControl: true
+    });
 
-var linea1Btn = document.getElementById('linea1-btn');
-var linea2Btn = document.getElementById('linea2-btn');
-var expandInfoBtn = document.getElementById('expand-info-btn');
-var speakInfoBtn = document.getElementById('speak-info-btn');
-var infoPanel = document.getElementById('info-panel');
-var infoContent = document.getElementById('info-content');
-var fontScale = 1;
-linea1Btn.addEventListener('click', function() { setActiveLine('L1'); });
-linea2Btn.addEventListener('click', function() { setActiveLine('L2'); });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
 
-function applyInfoFontScale() {
-  if (infoContent) {
-    infoContent.setAttribute('data-font-scale', fontScale);
-  }
-}
+    // Ruta L1 siguiendo las calles (OSRM)
+    var rutaL1Waypoints = [
+      L.latLng(39.89593665304968, -5.545329987670535), // Silo
+      L.latLng(39.89696422040098, -5.538571561339239), // Navarrosa
+      L.latLng(39.89117875751934, -5.53054470402191), // Marcha Verde
+      L.latLng(39.890326, -5.535922), // La Gota
+      L.latLng(39.892250, -5.538347), // Los Colorines
+      L.latLng(39.89581043396135, -5.538896528668628), // Genaro Cajal / Cartagena 
+      L.latLng(39.895206, -5.542914), // Ctra. Jarandilla
+      L.latLng(39.895087, -5.543563), // Ctra. Jarandilla/Entrada Estación Autobuses
+      L.latLng(39.892849170899524, -5.5451132366019795), // Paseo de la Estación
+      L.latLng(39.89204335743384, -5.545121723808191), // Cruz de los Caídos
+      L.latLng(39.892323117180524, -5.550879202777898), // Ambulatorio
+      L.latLng(39.888488891031265, -5.561153301912327), // Hospital Campo Arañuelo
+      L.latLng(39.892219543022726, -5.550901152427424), // Ambulatorio (Vuelta)
+      L.latLng(39.89015116167454, -5.545782507838506), // Ronda Sur
+      L.latLng(39.88873892662456, -5.541159335330454), // Ronda Sur / Ctra. Valdehúncar
+      L.latLng(39.89022679608061, -5.535731362484204), // La Gota (vuelta)
+      L.latLng(39.89067582505434, -5.5317100369435845),  // Marcha Verde (vuelta)
+      L.latLng(39.89714310027718, -5.538845697135179), // Navarrosa (vuelta)
+      L.latLng(39.89624361588451, -5.54551198946366), // Rotonda Silo (vuelta)
+      L.latLng(39.89593665304968, -5.545329987670535) // Silo (vuelta)
+    ];
 
-if (expandInfoBtn) {
-  expandInfoBtn.addEventListener('click', function() {
-    if (fontScale < 4) {
-      fontScale += 1;
-      applyInfoFontScale();
-    } else {
+    var routingControl = L.Routing.control({
+      waypoints: rutaL1Waypoints,
+      router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+      lineOptions: { styles: [{ color: '#0066cc', opacity: 0.7, weight: 4 }] },
+      addWaypoints: false,
+      draggableWaypoints: false,
+      fitSelectedRoute: false,
+      show: false,
+      routeWhileDragging: false,
+      createMarker: function () { return null; }
+    });
+
+    routingControl.on('routesfound', function (e) {
+      if (e.routes && e.routes.length) {
+        // L1: desde Hospital pintar naranja a partir de ese punto
+        drawSplitRoute(e.routes[0], '#0066cc', '#ff8c00', L.latLng(39.888488891031265, -5.561153301912327));
+      } else {
+        clearDirectionArrows();
+      }
+      fitBoundsToActiveMarkers();
+    });
+
+    // Ruta L2 siguiendo las calles (OSRM)
+    var rutaL2Waypoints = [
+      L.latLng(39.892035005367596, -5.545145706808227), // Cruz de los Caídos
+      L.latLng(39.89207084110331, -5.548122445662967), // Punto intermedio
+      L.latLng(39.89015116167454, -5.545782507838506), // Ronda Sur
+      L.latLng(39.88873892662456, -5.541159335330454), // Ronda Sur / Ctra. Valdehúncar
+      L.latLng(39.89022679608061, -5.535731362484204), // La Gota (vuelta)
+      L.latLng(39.89067582505434, -5.5317100369435845),  // Marcha Verde (vuelta)
+      L.latLng(39.89714310027718, -5.538845697135179), // Navarrosa (vuelta)
+      L.latLng(39.89774207768, -5.544290645204779), // Campo de Fútbol
+      L.latLng(39.91270936623701, -5.559816319323396), // Ciudad Deportiva
+      L.latLng(39.89622395893707, -5.544903568259242), // Silo
+      L.latLng(39.89557079448523, -5.549406406818009), // Punto intermedio
+      L.latLng(39.89494824131144, -5.5542351524473474), // Punto intermedio
+      L.latLng(39.89207523829097, -5.547344545709519), // Punto intermedio
+      L.latLng(39.892035005367596, -5.545145706808227) // Cruz de los Caídos (vuelta)
+    ];
+
+    var routingControlL2 = L.Routing.control({
+      waypoints: rutaL2Waypoints,
+      router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+      lineOptions: { styles: [{ color: '#8B4513', opacity: 0.7, weight: 4 }] },
+      addWaypoints: false,
+      draggableWaypoints: false,
+      fitSelectedRoute: false,
+      show: false,
+      routeWhileDragging: false,
+      createMarker: function () { return null; }
+    });
+
+    routingControlL2.on('routesfound', function (e) {
+      if (e.routes && e.routes.length) {
+        // L2: desde Ciudad Deportiva pintar naranja a partir de ese punto
+        drawSplitRoute(e.routes[0], '#8B4513', '#ff8c00', L.latLng(39.91270936623701, -5.559816319323396));
+      } else {
+        clearDirectionArrows();
+      }
+      fitBoundsToActiveMarkers();
+    });
+
+    var activeLine = 'L1';
+    var allMarkers = [];
+
+    var lineColors = {
+      L1: '#0066cc',
+      L2: '#8B4513',
+      both: '#666666'
+    };
+
+    function createSvgIcon(color) {
+      var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="25" height="41" viewBox="0 0 25 41">'
+        + '<path d="M12.5 0C5.6 0 0 5.6 0 12.5 0 21.9 12.5 41 12.5 41S25 21.9 25 12.5C25 5.6 19.4 0 12.5 0z" fill="' + color + '" stroke="#333" stroke-width="1"/>'
+        + '<circle cx="12.5" cy="12.5" r="6" fill="white" fill-opacity="0.8"/>'
+        + '</svg>';
+      var iconUrl = 'data:image/svg+xml;base64,' + btoa(svg);
+      return L.icon({
+        iconUrl: iconUrl,
+        shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+        iconSize: [25, 41],
+        iconAnchor: [12, 41],
+        popupAnchor: [1, -34],
+        shadowSize: [41, 41]
+      });
+    }
+
+    var blueIcon = createSvgIcon('#0066cc');
+    var brownIcon = createSvgIcon('#8B4513');
+
+    function getIconForLineas(lineas) {
+      return activeLine === 'L1' ? blueIcon : brownIcon;
+    }
+
+    function createColoredMarker(lat, lon, lineas, title) {
+      var marker = L.marker([lat, lon], { icon: getIconForLineas(lineas), title: title || '' });
+      // add a tooltip for sighted users
+      marker.bindTooltip(title || '', { direction: 'top', offset: [0, -10], permanent: false });
+      return marker;
+    }
+
+
+    /* HORARIOS */
+
+    var horariosL1 = [
+      "08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"
+    ];
+
+    var horariosL2 = [
+      "15:30", "16:30", "17:30", "18:30", "19:30"
+    ];
+
+
+    /* FUNCIÓN PARA CREAR PARADAS */
+
+    function parada(nombre, lat, lon, linea, horariosCustom = null) {
+      stopsBounds.extend([lat, lon]);
+
+      var lineas = Array.isArray(linea) ? linea : [linea];
+      var marker = createColoredMarker(lat, lon, lineas, nombre);
+      marker.lineas = lineas;
+      marker.nombre = nombre;
+      marker.horariosCustom = horariosCustom;
+
+      marker.on('click', function () {
+        showInfo(nombre, lineas, horariosCustom);
+      });
+
+      allMarkers.push(marker);
+      if (lineas.includes(activeLine)) {
+        marker.addTo(map);
+      }
+    }
+
+    function showInfo(nombre, lineas, horariosCustom) {
+      var content = buildScheduleGrid(nombre, lineas, horariosCustom);
+      document.getElementById('info-content').innerHTML = content;
+      var panel = document.getElementById('info-panel');
+      panel.setAttribute('aria-hidden', 'false');
+      panel.style.display = 'block';
       fontScale = 1;
       applyInfoFontScale();
-    }
-  });
-}
-
-function getSpeechRate() {
-  var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  return isIOS ? 0.68 : 0.75;
-}
-
-if (speakInfoBtn) {
-  speakInfoBtn.addEventListener('click', function() {
-    if (!('speechSynthesis' in window)) {
-      alert('Tu navegador no soporta lectura por voz.');
-      return;
-    }
-    var textToSpeak = infoContent ? infoContent.innerText : '';
-    if (!textToSpeak.trim()) return;
-    window.speechSynthesis.cancel();
-    var utterance = new SpeechSynthesisUtterance(textToSpeak);
-    utterance.lang = 'es-ES';
-    utterance.rate = getSpeechRate();
-    utterance.pitch = 1;
-    utterance.volume = 1;
-
-    var voices = window.speechSynthesis.getVoices();
-    var preferredVoice = voices.find(function(voice) {
-      return /es|es-ES/i.test(voice.lang);
-    });
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+      var btn = panel.querySelector('.close-btn');
+      if (btn) btn.focus();
     }
 
-    window.speechSynthesis.speak(utterance);
-  });
-}
+    function hideInfo() {
+      var panel = document.getElementById('info-panel');
+      panel.setAttribute('aria-hidden', 'true');
+      panel.style.display = 'none';
+      fontScale = 1;
+      applyInfoFontScale();
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+      }
+    }
 
-function buildScheduleGrid(nombre, lineas, horariosCustom) {
-    var html = '<b>' + nombre + '</b><br><br>';
-    html += '<div class="schedule-grid">';
+    function shouldShowLine(lineas, line) {
+      return lineas.includes(line);
+    }
 
-    lineas.forEach(function(l) {
+    function updateMarkerVisibility() {
+      allMarkers.forEach(function (marker) {
+        if (shouldShowLine(marker.lineas, activeLine)) {
+          if (!map.hasLayer(marker)) {
+            marker.addTo(map);
+          }
+        } else {
+          if (map.hasLayer(marker)) {
+            map.removeLayer(marker);
+          }
+        }
+      });
+    }
+
+    function fitBoundsToActiveMarkers() {
+      var bounds = L.latLngBounds([]);
+      allMarkers.forEach(function (marker) {
+        if (shouldShowLine(marker.lineas, activeLine)) {
+          bounds.extend(marker.getLatLng());
+        }
+      });
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, { padding: [80, 80] });
+      }
+    }
+
+    var currentRouteControl = null;
+
+    function updateMarkerIcons() {
+      allMarkers.forEach(function (marker) {
+        marker.setIcon(getIconForLineas(marker.lineas));
+      });
+    }
+
+    function updateRouteDisplay() {
+      if (currentRouteControl) {
+        map.removeControl(currentRouteControl);
+        currentRouteControl = null;
+      }
+
+      clearDirectionArrows();
+      currentRouteControl = (activeLine === 'L1') ? routingControl : routingControlL2;
+      currentRouteControl.addTo(map);
+      currentRouteControl.route();
+
+      updateMarkerVisibility();
+      updateMarkerIcons();
+      fitBoundsToActiveMarkers();
+    }
+
+    function setActiveLine(line) {
+      activeLine = line;
+      var b1 = document.getElementById('linea1-btn');
+      var b2 = document.getElementById('linea2-btn');
+      b1.classList.toggle('active', line === 'L1');
+      b2.classList.toggle('active', line === 'L2');
+      b1.setAttribute('aria-pressed', line === 'L1' ? 'true' : 'false');
+      b2.setAttribute('aria-pressed', line === 'L2' ? 'true' : 'false');
+      hideInfo();
+      updateRouteDisplay();
+    }
+
+    var linea1Btn = document.getElementById('linea1-btn');
+    var linea2Btn = document.getElementById('linea2-btn');
+    var expandInfoBtn = document.getElementById('expand-info-btn');
+    var speakInfoBtn = document.getElementById('speak-info-btn');
+    var infoPanel = document.getElementById('info-panel');
+    var infoContent = document.getElementById('info-content');
+    var fontScale = 1;
+    linea1Btn.addEventListener('click', function () { setActiveLine('L1'); });
+    linea2Btn.addEventListener('click', function () { setActiveLine('L2'); });
+
+    function applyInfoFontScale() {
+      if (infoContent) {
+        infoContent.setAttribute('data-font-scale', fontScale);
+      }
+    }
+
+    if (expandInfoBtn) {
+      expandInfoBtn.addEventListener('click', function () {
+        if (fontScale < 4) {
+          fontScale += 1;
+          applyInfoFontScale();
+        } else {
+          fontScale = 1;
+          applyInfoFontScale();
+        }
+      });
+    }
+
+    function getSpeechRate() {
+      var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      return isIOS ? 0.68 : 0.75;
+    }
+
+    if (speakInfoBtn) {
+      speakInfoBtn.addEventListener('click', function () {
+        if (!('speechSynthesis' in window)) {
+          alert('Tu navegador no soporta lectura por voz.');
+          return;
+        }
+        var textToSpeak = infoContent ? infoContent.innerText : '';
+        if (!textToSpeak.trim()) return;
+        window.speechSynthesis.cancel();
+        var utterance = new SpeechSynthesisUtterance(textToSpeak);
+        utterance.lang = 'es-ES';
+        utterance.rate = getSpeechRate();
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        var voices = window.speechSynthesis.getVoices();
+        var preferredVoice = voices.find(function (voice) {
+          return /es|es-ES/i.test(voice.lang);
+        });
+        if (preferredVoice) {
+          utterance.voice = preferredVoice;
+        }
+
+        window.speechSynthesis.speak(utterance);
+      });
+    }
+
+    function buildScheduleGrid(nombre, lineas, horariosCustom) {
+      var html = '<b>' + nombre + '</b><br><br>';
+      html += '<div class="schedule-grid">';
+
+      lineas.forEach(function (l) {
         var horarios = horariosCustom && horariosCustom[l] ? horariosCustom[l] : (l === 'L1' ? horariosL1 : horariosL2);
         html += '<div class="schedule-column">';
         html += '<div class="schedule-line"> ' + l + '</div>';
-        horarios.forEach(function(h) {
-            html += '<div class="schedule-time">' + h + '</div>';
+        horarios.forEach(function (h) {
+          html += '<div class="schedule-time">' + h + '</div>';
         });
         html += '</div>';
+      });
+
+      html += '</div>';
+      return html;
+    }
+
+    // Cerrar panel al hacer click en el mapa
+    map.on('click', function () {
+      hideInfo();
     });
 
-    html += '</div>';
-    return html;
-}
+    setActiveLine(activeLine);
 
-// Cerrar panel al hacer click en el mapa
-map.on('click', function() {
-    hideInfo();
-});
+    /* PARADAS L1 */
+    parada("Silo", 39.89606049320882, -5.544903589159379, "L1", { L1: ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00"] });
+    parada("Navarrosa", 39.896962797655945, -5.538585727664585, "L1", { L1: ["08:05", "09:05", "10:05", "11:05", "12:05", "13:05", "14:05"] });
+    parada("Marcha Verde", 39.890748, -5.531859, "L1", { L1: ["08:10", "09:10", "10:10", "11:10", "12:10", "13:10", "14:10"] });
+    parada("La Gota", 39.890326, -5.535922, "L1", { L1: ["08:15", "09:15", "10:15", "11:15", "12:15", "13:15", "14:15"] });
+    parada("Los Colorines", 39.892250, -5.538347, "L1");
+    parada("Estación de Autobuses", 39.89479316046357, -5.544554349363017, "L1");
+    parada("Cruz de los Caídos", 39.892035005367596, -5.545145706808227, "L1");
+    parada("Ambularorio", 39.892318482521254, -5.550908429949313, "L1");
+    parada("Hospital Campo Arañuelo", 39.8884254926139, -5.561181591792536, "L1");
+    parada("Ambularorio", 39.89221924461019, -5.551059787676879, "L1");
+    parada("Ronda Sur", 39.89016270237608, -5.545865301655327, "L1");
+    parada("Ronda Sur / Ctra. Valdehúncar", 39.888741480135465, -5.541166557744804, "L1");
+    parada("La Gota", 39.890214305657715, -5.535739246910879, "L1");
+    parada("Navarrosa", 39.897134, -5.538749, "L1");
 
-setActiveLine(activeLine);
-
-/* PARADAS L1 */
-parada("Silo",39.89606049320882, -5.544903589159379,"L1",{L1: ["08:00","09:00","10:00","11:00","12:00","13:00","14:00"]});
-parada("Navarrosa",39.896962797655945, -5.538585727664585,"L1",{L1: ["08:05","09:05","10:05","11:05","12:05","13:05","14:05"]});
-parada("Marcha Verde",39.890748, -5.531859,"L1",{L1: ["08:10","09:10","10:10","11:10","12:10","13:10","14:10"]});
-parada("La Gota",39.890326, -5.535922,"L1",{L1: ["08:15","09:15","10:15","11:15","12:15","13:15","14:15"]});
-parada("Los Colorines",39.892250, -5.538347,"L1");
-parada("Estación de Autobuses",39.89479316046357, -5.544554349363017,"L1");
-parada("Cruz de los Caídos",39.892035005367596, -5.545145706808227,"L1");
-parada("Ambularorio",39.892318482521254, -5.550908429949313,"L1");
-parada("Hospital Campo Arañuelo",39.8884254926139, -5.561181591792536,"L1");
-parada("Ambularorio",39.89221924461019, -5.551059787676879,"L1");
-parada("Ronda Sur",39.89016270237608, -5.545865301655327,"L1");
-parada("Ronda Sur / Ctra. Valdehúncar",39.888741480135465, -5.541166557744804,"L1");
-parada("La Gota",39.890214305657715, -5.535739246910879,"L1");
-parada("Navarrosa",39.897134, -5.538749,"L1");
-
-/* PARADAS L2 */
-parada("Cruz de los Caídos",39.892035005367596, -5.545145706808227,"L2");
-parada("Ronda Sur",39.89016270237608, -5.545865301655327,"L2");
-parada("Ronda Sur / Ctra. Valdehúncar",39.888741480135465, -5.541166557744804,"L2");
-parada("La Gota",39.890214305657715, -5.535739246910879,"L2");
-parada("Navarrosa",39.897134, -5.538749,"L2");
-parada("Campo de Fútbol",39.89774207768, -5.544290645204779,"L2");
-parada("Ciudad Deportiva",39.91270936623701, -5.559816319323396,"L2");
+    /* PARADAS L2 */
+    parada("Cruz de los Caídos", 39.892035005367596, -5.545145706808227, "L2");
+    parada("Ronda Sur", 39.89016270237608, -5.545865301655327, "L2");
+    parada("Ronda Sur / Ctra. Valdehúncar", 39.888741480135465, -5.541166557744804, "L2");
+    parada("La Gota", 39.890214305657715, -5.535739246910879, "L2");
+    parada("Navarrosa", 39.897134, -5.538749, "L2");
+    parada("Campo de Fútbol", 39.89774207768, -5.544290645204779, "L2");
+    parada("Ciudad Deportiva", 39.91270936623701, -5.559816319323396, "L2");
 
 
 
-</script>
+  </script>
 
 </body>
+
 </html>
