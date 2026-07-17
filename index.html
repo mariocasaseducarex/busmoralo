@@ -168,6 +168,244 @@
     });
 
     //añadido por mí-----------------------
+
+    // ==========================================================
+    // Adaptador de Valhalla para Leaflet Routing Machine
+    // ==========================================================
+    // Sustituye OpenRouteService por Valhalla (https://valhalla.github.io/valhalla/),
+    // un motor de rutas open-source. Aquí usamos el servidor público de
+    // demostración que mantiene el proyecto OSM Alemania:
+    // https://valhalla1.openstreetmap.de/route
+    // Es gratuito y no requiere API key, pero es un servicio de "fair use"
+    // sin garantías de disponibilidad ni SLA. Para producción se recomienda
+    // levantar una instancia propia de Valhalla (Docker: ghcr.io/valhalla/valhalla)
+    // o contratar un proveedor (p.ej. https://gis-ops.com, Stadia Maps, etc.)
+    // y cambiar VALHALLA_ENDPOINT por la URL de tu propio servidor.
+    var VALHALLA_ENDPOINT = 'https://valhalla1.openstreetmap.de/route';
+
+    // Identificador de la app, tal y como pide FOSSGIS a quien use su
+    // servidor público: https://github.com/valhalla/valhalla (ver README,
+    // sección "Getting the code" / demo server). Se envía como cabecera
+    // X-Client-Id en cada petición para que puedan identificar el origen
+    // del tráfico si hiciera falta contactar o depurar algún problema.
+    var VALHALLA_CLIENT_ID = 'bus-urbano-navalmoral-de-la-mata';
+
+    // Cuánto tiempo se guarda en caché (localStorage) el resultado de cada
+    // ruta calculada, para no repetir la misma consulta a Valhalla en cada
+    // visita. Las líneas de autobús cambian muy de vez en cuando, así que
+    // 24h de caché reduce mucho la carga sobre el servidor sin arriesgarse
+    // a mostrar una ruta desactualizada durante mucho tiempo.
+    var VALHALLA_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+    var VALHALLA_CACHE_PREFIX = 'valhalla_route_cache_v1_';
+
+    // Hash corto y estable de un string, usado para generar claves de
+    // localStorage que no superen límites de longitud.
+    function simpleHash(str) {
+      var hash = 0, i, chr;
+      for (i = 0; i < str.length; i++) {
+        chr = str.charCodeAt(i);
+        hash = ((hash << 5) - hash) + chr;
+        hash |= 0;
+      }
+      return Math.abs(hash).toString(36);
+    }
+
+    function readRouteCache(key) {
+      try {
+        var raw = localStorage.getItem(key);
+        if (!raw) return null;
+        var parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed.t !== 'number') return null;
+        if (Date.now() - parsed.t > VALHALLA_CACHE_MAX_AGE_MS) return null;
+        return parsed;
+      } catch (e) {
+        // localStorage puede no estar disponible (navegación privada, cuotas
+        // agotadas, etc.); en ese caso simplemente no usamos caché.
+        return null;
+      }
+    }
+
+    function writeRouteCache(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (e) {
+        // Igual que arriba: si falla, no pasa nada, solo no se cachea.
+      }
+    }
+
+    // Decodifica el "shape" de Valhalla, que es un polyline codificado con
+    // precisión 6 (a diferencia del estándar de Google Maps, que usa 5).
+    function decodeValhallaPolyline(str, precision) {
+      var index = 0, lat = 0, lng = 0, coordinates = [],
+        shift, result, byte, latChange, lngChange,
+        factor = Math.pow(10, precision || 6);
+
+      while (index < str.length) {
+        byte = null; shift = 0; result = 0;
+        do {
+          byte = str.charCodeAt(index++) - 63;
+          result |= (byte & 0x1f) << shift;
+          shift += 5;
+        } while (byte >= 0x20);
+        latChange = (result & 1) ? ~(result >> 1) : (result >> 1);
+
+        shift = result = 0;
+        do {
+          byte = str.charCodeAt(index++) - 63;
+          result |= (byte & 0x1f) << shift;
+          shift += 5;
+        } while (byte >= 0x20);
+        lngChange = (result & 1) ? ~(result >> 1) : (result >> 1);
+
+        lat += latChange;
+        lng += lngChange;
+        coordinates.push([lat / factor, lng / factor]);
+      }
+      return coordinates;
+    }
+
+    function ValhallaRouter(options) {
+      // Perfiles ("costing") típicos de Valhalla: 'auto', 'bus', 'bicycle',
+      // 'pedestrian', 'truck'... 'bus' tiene en cuenta restricciones propias
+      // de autobuses cuando el mapa de OSM las tiene etiquetadas; si da
+      // problemas en tu zona, prueba con 'auto'.
+      this._costing = (options && options.costing) || 'auto';
+      this._endpoint = (options && options.endpoint) || VALHALLA_ENDPOINT;
+      // El servidor público de Valhalla limita a 20 ubicaciones por petición
+      // para los perfiles 'auto'/'bus'. Si una ruta tiene más waypoints,
+      // la partimos en varios tramos y los unimos en el cliente.
+      this._maxLocations = (options && options.maxLocations) || 20;
+    }
+
+    // Parte un array de waypoints en trozos de como máximo maxSize elementos,
+    // repitiendo el último punto de cada trozo como primero del siguiente
+    // para que la ruta resultante sea continua.
+    function chunkWaypoints(waypoints, maxSize) {
+      if (waypoints.length <= maxSize) return [waypoints];
+      var chunks = [];
+      var i = 0;
+      while (i < waypoints.length - 1) {
+        var end = Math.min(i + maxSize, waypoints.length);
+        chunks.push(waypoints.slice(i, end));
+        if (end === waypoints.length) break;
+        i = end - 1;
+      }
+      return chunks;
+    }
+
+    ValhallaRouter.prototype.route = function (waypoints, callback, context) {
+      var self = this;
+
+      var locationsAll = waypoints.map(function (wp) {
+        return { lat: wp.latLng.lat, lon: wp.latLng.lng };
+      });
+      var cacheKey = VALHALLA_CACHE_PREFIX + simpleHash(self._costing + '|' + JSON.stringify(locationsAll));
+
+      function buildRouteFromCoords(coordsArray, totalDistance, totalTime) {
+        var latlngs = coordsArray.map(function (c) {
+          return L.latLng(c[0], c[1]);
+        });
+        return {
+          name: '',
+          coordinates: latlngs,
+          instructions: [],
+          summary: { totalDistance: totalDistance, totalTime: totalTime },
+          waypoints: waypoints.map(function (wp) { return wp.latLng; }),
+          inputWaypoints: waypoints.map(function (wp) { return wp.latLng; })
+        };
+      }
+
+      var cached = readRouteCache(cacheKey);
+      if (cached) {
+        // Devolvemos la ruta cacheada de forma asíncrona (con Promise.resolve)
+        // para respetar el contrato async de Leaflet Routing Machine.
+        Promise.resolve().then(function () {
+          callback.call(context, null, [buildRouteFromCoords(cached.coords, cached.distance, cached.time)]);
+        });
+        return;
+      }
+
+      var chunks = chunkWaypoints(waypoints, this._maxLocations);
+
+      var requests = chunks.map(function (chunk) {
+        var locations = chunk.map(function (wp) {
+          return { lat: wp.latLng.lat, lon: wp.latLng.lng };
+        });
+
+        return fetch(self._endpoint, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Client-Id': VALHALLA_CLIENT_ID
+          },
+          body: JSON.stringify({
+            locations: locations,
+            costing: self._costing,
+            units: 'kilometers'
+          })
+        }).then(function (resp) {
+          if (!resp.ok) {
+            return resp.text().then(function (text) {
+              throw new Error('Valhalla respondió ' + resp.status + ': ' + text);
+            });
+          }
+          return resp.json();
+        });
+      });
+
+      Promise.all(requests)
+        .then(function (results) {
+          var allCoords = [];
+          var totalDistanceKm = 0;
+          var totalTimeSec = 0;
+
+          results.forEach(function (data, chunkIndex) {
+            var trip = data.trip;
+            if (!trip || !trip.legs || !trip.legs.length) {
+              throw new Error('Valhalla no devolvió ruta para uno de los tramos');
+            }
+
+            // Un "trip" puede tener varios "legs" (uno por tramo entre
+            // waypoints consecutivos dentro del mismo trozo); los unimos
+            // evitando duplicar el punto de unión entre legs.
+            var chunkCoords = [];
+            trip.legs.forEach(function (leg, legIndex) {
+              var coords = decodeValhallaPolyline(leg.shape, 6);
+              if (legIndex > 0) coords = coords.slice(1);
+              chunkCoords = chunkCoords.concat(coords);
+            });
+
+            // El primer punto de cada trozo (salvo el primero) es el mismo
+            // que el último punto del trozo anterior: lo quitamos.
+            if (chunkIndex > 0) chunkCoords = chunkCoords.slice(1);
+
+            allCoords = allCoords.concat(chunkCoords);
+
+            var summary = trip.summary || { length: 0, time: 0 };
+            totalDistanceKm += summary.length;
+            totalTimeSec += summary.time;
+          });
+
+          // Valhalla da la longitud en kilómetros (por el "units" pedido) y el
+          // tiempo en segundos; lo normalizamos a metros para mantener el
+          // mismo formato que usaba el resto del código con OSRM/ORS.
+          var totalDistance = totalDistanceKm * 1000;
+          var totalTime = totalTimeSec;
+
+          writeRouteCache(cacheKey, { t: Date.now(), coords: allCoords, distance: totalDistance, time: totalTime });
+
+          callback.call(context, null, [buildRouteFromCoords(allCoords, totalDistance, totalTime)]);
+        })
+        .catch(function (err) {
+          console.error('Error consultando Valhalla:', err);
+          callback.call(context, { status: -1, message: err.message });
+        });
+    };
+
+    L.Routing.ValhallaRouter = ValhallaRouter;
+    // ==========================================================
+
+
     var stopsBounds = L.latLngBounds([]);
     var directionArrowLayers = [];
 
@@ -315,10 +553,13 @@
       L.latLng(39.892250, -5.538347), // Los Colorines
       L.latLng(39.89581043396135, -5.538896528668628), // Genaro Cajal / Cartagena 
       L.latLng(39.895206, -5.542914), // Ctra. Jarandilla
+      L.latLng(39.895147680782955, -5.543273091316223), // Ctra. Jarandilla-intermedio
+      L.latLng(39.895086, -5.543619), // Ctra. Jarandilla-intermedio
       L.latLng(39.895087, -5.543563), // Ctra. Jarandilla/Entrada Estación Autobuses
       L.latLng(39.892849170899524, -5.5451132366019795), // Paseo de la Estación
       L.latLng(39.89204335743384, -5.545121723808191), // Cruz de los Caídos
       L.latLng(39.892323117180524, -5.550879202777898), // Ambulatorio
+      L.latLng(39.89080961048773, -5.559398531913758), // Subida a Hospital
       L.latLng(39.888488891031265, -5.561153301912327), // Hospital Campo Arañuelo
       L.latLng(39.892219543022726, -5.550901152427424), // Ambulatorio (Vuelta)
       L.latLng(39.89015116167454, -5.545782507838506), // Ronda Sur
@@ -332,7 +573,7 @@
 
     var routingControl = L.Routing.control({
       waypoints: rutaL1Waypoints,
-      router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+      router: new L.Routing.ValhallaRouter({ costing: 'auto' }),
       lineOptions: { styles: [{ color: '#0066cc', opacity: 0.7, weight: 4 }] },
       addWaypoints: false,
       draggableWaypoints: false,
@@ -372,7 +613,7 @@
 
     var routingControlL2 = L.Routing.control({
       waypoints: rutaL2Waypoints,
-      router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+      router: new L.Routing.ValhallaRouter({ costing: 'auto' }),
       lineOptions: { styles: [{ color: '#8B4513', opacity: 0.7, weight: 4 }] },
       addWaypoints: false,
       draggableWaypoints: false,
