@@ -24,8 +24,7 @@
         <button id="linea1-btn" class="active" data-line="L1" aria-pressed="true" aria-label="Mostrar Línea 1">Línea
           1</button>
         <button id="linea2-btn" data-line="L2" aria-pressed="false" aria-label="Mostrar Línea 2">Línea 2</button>
-        <button id="legend-btn" class="legend-button" type="button" aria-haspopup="dialog" aria-controls="legend-modal"
-          aria-label="Abrir leyenda">Información</button>
+        <a id="legend-btn" class="legend-button" href="galeria.html" aria-label="Abrir galería de información">Información</a>
       </nav>
       <a id="back-link" class="back-btn" href="https://www.aytonavalmoral.es/" aria-label="Volver al Ayuntamiento" title="Volver al Ayuntamiento">
         <svg class="back-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
@@ -36,13 +35,6 @@
     </div>
   </header>
 
-  <div id="legend-modal" class="legend-modal" role="dialog" aria-modal="true" aria-hidden="true"
-    aria-label="Leyenda del autobús">
-    <div class="legend-modal__content">
-      <button id="legend-close" class="legend-modal__close" type="button" aria-label="Cerrar leyenda">×</button>
-      <img src="img/AutobusMoralo.jpg" alt="Leyenda del autobús urbano" />
-    </div>
-  </div>
 
   <div id="image-viewer-modal" class="image-viewer-modal" role="dialog" aria-modal="true" aria-hidden="true"
     aria-label="Visualizador de imagen">
@@ -73,45 +65,6 @@
 
   <script>
 
-    var legendModal = document.getElementById('legend-modal');
-    var legendBtn = document.getElementById('legend-btn');
-    var legendCloseBtn = document.getElementById('legend-close');
-
-    function openLegend() {
-      if (!legendModal) return;
-      legendModal.classList.add('is-open');
-      legendModal.setAttribute('aria-hidden', 'false');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function closeLegend() {
-      if (!legendModal) return;
-      legendModal.classList.remove('is-open');
-      legendModal.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-    }
-
-    if (legendBtn) {
-      legendBtn.addEventListener('click', openLegend);
-    }
-
-    if (legendCloseBtn) {
-      legendCloseBtn.addEventListener('click', closeLegend);
-    }
-
-    if (legendModal) {
-      legendModal.addEventListener('click', function (event) {
-        if (event.target === legendModal) {
-          closeLegend();
-        }
-      });
-    }
-
-    document.addEventListener('keydown', function (event) {
-      if (event.key === 'Escape') {
-        closeLegend();
-      }
-    });
 
     var imageViewerModal = document.getElementById('image-viewer-modal');
     var imageViewerCloseBtn = document.getElementById('image-viewer-close');

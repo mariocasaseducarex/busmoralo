@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Galería de planos de autobús</title>
+  <link rel="icon" type="image/png" href="img/logoescudo.PNG" sizes="32x32">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <header>
+    <div class="header-left">
+      <div class="header-brand-group">
+        <img class="header-brand-image" src="img/LogoBus.png" alt="Logo del autobús urbano de Navalmoral de la Mata" />
+        <img class="logo" src="img/escudonavamoral.png" alt="Escudo de Navalmoral de la Mata" />
+      </div>
+      <a class="back-btn" href="index.html" aria-label="Volver al mapa">← Volver al mapa</a>
+    </div>
+  </header>
+
+  <main class="gallery-page">
+    <section class="gallery-intro">
+      <h1>Galería de planos</h1>
+      <p>Toca o haz clic en cada imagen para verla ampliada.</p>
+    </section>
+
+    <section class="gallery-grid" aria-label="Galería de planos de líneas de autobús">
+      <figure class="gallery-item">
+        <button type="button" class="gallery-thumb" data-src="img/autobus-linea1-conecta-tu-ciudad.svg" data-caption="Línea 1: Conecta tu ciudad">
+          <img src="img/autobus-linea1-conecta-tu-ciudad.svg" alt="Plano de la Línea 1: Conecta tu ciudad" loading="lazy">
+        </button>
+      </figure>
+
+      <figure class="gallery-item">
+        <button type="button" class="gallery-thumb" data-src="img/autobus-linea2-conecta-tu-deporte.svg" data-caption="Línea 2: Conecta tu deporte">
+          <img src="img/autobus-linea2-conecta-tu-deporte.svg" alt="Plano de la Línea 2: Conecta tu deporte" loading="lazy">
+        </button>
+      </figure>
+    </section>
+  </main>
+
+  <div id="gallery-viewer" class="gallery-viewer-modal" role="dialog" aria-modal="true" aria-hidden="true" aria-label="Visualizador de imagen ampliada">
+    <div class="gallery-viewer-content">
+      <button id="gallery-viewer-close" class="gallery-viewer-close" type="button" aria-label="Cerrar imagen ampliada">×</button>
+      <img id="gallery-viewer-img" src="" alt="" />
+      <p id="gallery-viewer-caption" class="gallery-viewer-caption"></p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var viewer = document.getElementById('gallery-viewer');
+      var viewerImg = document.getElementById('gallery-viewer-img');
+      var viewerCaption = document.getElementById('gallery-viewer-caption');
+      var closeButton = document.getElementById('gallery-viewer-close');
+      var buttons = document.querySelectorAll('.gallery-thumb');
+
+      function openViewer(src, alt, caption) {
+        if (!viewer || !viewerImg) return;
+        viewerImg.src = src;
+        viewerImg.alt = alt || caption || 'Imagen ampliada';
+        viewerCaption.textContent = caption || '';
+        viewer.classList.add('is-open');
+        viewer.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+        closeButton.focus();
+      }
+
+      function closeViewer() {
+        if (!viewer) return;
+        viewer.classList.remove('is-open');
+        viewer.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        viewerImg.src = '';
+      }
+
+      buttons.forEach(function (button) {
+        button.addEventListener('click', function () {
+          openViewer(button.dataset.src, button.querySelector('img').alt, button.dataset.caption);
+        });
+      });
+
+      closeButton.addEventListener('click', closeViewer);
+
+      viewer.addEventListener('click', function (event) {
+        if (event.target === viewer) {
+          closeViewer();
+        }
+      });
+
+      document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && viewer.classList.contains('is-open')) {
+          closeViewer();
+        }
+      });
+    })();
+  </script>
+</body>
+
+</html>
